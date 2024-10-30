@@ -94,7 +94,6 @@ class ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f
         'Reepay\\Checkout\\Gateways\\Paypal' => __DIR__ . '/../..' . '/includes/Gateways/Paypal.php',
         'Reepay\\Checkout\\Gateways\\ReepayCheckout' => __DIR__ . '/../..' . '/includes/Gateways/ReepayCheckout.php',
         'Reepay\\Checkout\\Gateways\\ReepayGateway' => __DIR__ . '/../..' . '/includes/Gateways/ReepayGateway.php',
-        'Reepay\\Checkout\\Gateways\\Resurs' => __DIR__ . '/../..' . '/includes/Gateways/Resurs.php',
         'Reepay\\Checkout\\Gateways\\Swish' => __DIR__ . '/../..' . '/includes/Gateways/Swish.php',
         'Reepay\\Checkout\\Gateways\\Viabill' => __DIR__ . '/../..' . '/includes/Gateways/Viabill.php',
         'Reepay\\Checkout\\Gateways\\Vipps' => __DIR__ . '/../..' . '/includes/Gateways/Vipps.php',

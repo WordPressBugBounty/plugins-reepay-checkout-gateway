@@ -64,7 +64,6 @@ return array(
     'Reepay\\Checkout\\Gateways\\Paypal' => $baseDir . '/includes/Gateways/Paypal.php',
     'Reepay\\Checkout\\Gateways\\ReepayCheckout' => $baseDir . '/includes/Gateways/ReepayCheckout.php',
     'Reepay\\Checkout\\Gateways\\ReepayGateway' => $baseDir . '/includes/Gateways/ReepayGateway.php',
-    'Reepay\\Checkout\\Gateways\\Resurs' => $baseDir . '/includes/Gateways/Resurs.php',
     'Reepay\\Checkout\\Gateways\\Swish' => $baseDir . '/includes/Gateways/Swish.php',
     'Reepay\\Checkout\\Gateways\\Viabill' => $baseDir . '/includes/Gateways/Viabill.php',
     'Reepay\\Checkout\\Gateways\\Vipps' => $baseDir . '/includes/Gateways/Vipps.php',
