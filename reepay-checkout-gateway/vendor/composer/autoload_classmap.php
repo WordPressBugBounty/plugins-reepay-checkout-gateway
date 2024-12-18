@@ -17,6 +17,7 @@ return array(
     'Reepay\\Checkout\\Admin\\Main' => $baseDir . '/includes/Admin/Main.php',
     'Reepay\\Checkout\\Admin\\MetaBoxes\\Order' => $baseDir . '/includes/Admin/MetaBoxes/Order.php',
     'Reepay\\Checkout\\Admin\\MetaBoxes\\User' => $baseDir . '/includes/Admin/MetaBoxes/User.php',
+    'Reepay\\Checkout\\Admin\\OrderTable' => $baseDir . '/includes/Admin/OrderTable.php',
     'Reepay\\Checkout\\Admin\\PluginsPage' => $baseDir . '/includes/Admin/PluginsPage.php',
     'Reepay\\Checkout\\Api' => $baseDir . '/includes/Api.php',
     'Reepay\\Checkout\\Api\\Controller\\DebugController' => $baseDir . '/includes/Api/Controller/DebugController.php',

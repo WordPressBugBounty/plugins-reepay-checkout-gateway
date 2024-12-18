@@ -47,6 +47,7 @@ class ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f
         'Reepay\\Checkout\\Admin\\Main' => __DIR__ . '/../..' . '/includes/Admin/Main.php',
         'Reepay\\Checkout\\Admin\\MetaBoxes\\Order' => __DIR__ . '/../..' . '/includes/Admin/MetaBoxes/Order.php',
         'Reepay\\Checkout\\Admin\\MetaBoxes\\User' => __DIR__ . '/../..' . '/includes/Admin/MetaBoxes/User.php',
+        'Reepay\\Checkout\\Admin\\OrderTable' => __DIR__ . '/../..' . '/includes/Admin/OrderTable.php',
         'Reepay\\Checkout\\Admin\\PluginsPage' => __DIR__ . '/../..' . '/includes/Admin/PluginsPage.php',
         'Reepay\\Checkout\\Api' => __DIR__ . '/../..' . '/includes/Api.php',
         'Reepay\\Checkout\\Api\\Controller\\DebugController' => __DIR__ . '/../..' . '/includes/Api/Controller/DebugController.php',
