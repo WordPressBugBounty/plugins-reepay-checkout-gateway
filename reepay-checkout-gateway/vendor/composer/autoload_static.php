@@ -103,6 +103,7 @@ class ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f
         'Reepay\\Checkout\\Gateways\\VippsRecurring' => __DIR__ . '/../..' . '/includes/Gateways/VippsRecurring.php',
         'Reepay\\Checkout\\Integrations\\Main' => __DIR__ . '/../..' . '/includes/Integrations/Main.php',
         'Reepay\\Checkout\\Integrations\\PWGiftCardsIntegration' => __DIR__ . '/../..' . '/includes/Integrations/PWGiftCardsIntegration.php',
+        'Reepay\\Checkout\\Integrations\\PolylangIntegration' => __DIR__ . '/../..' . '/includes/Integrations/PolylangIntegration.php',
         'Reepay\\Checkout\\Integrations\\WCGiftCardsIntegration' => __DIR__ . '/../..' . '/includes/Integrations/WCGiftCardsIntegration.php',
         'Reepay\\Checkout\\Integrations\\WPCProductBundlesWooCommerceIntegration' => __DIR__ . '/../..' . '/includes/Integrations/WPCProductBundlesWooCommerceIntegration.php',
         'Reepay\\Checkout\\Integrations\\WooBlocks\\WooBlocksIntegration' => __DIR__ . '/../..' . '/includes/Integrations/WooBlocks/WooBlocksIntegration.php',

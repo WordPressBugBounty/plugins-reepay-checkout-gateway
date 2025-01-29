@@ -73,6 +73,7 @@ return array(
     'Reepay\\Checkout\\Gateways\\VippsRecurring' => $baseDir . '/includes/Gateways/VippsRecurring.php',
     'Reepay\\Checkout\\Integrations\\Main' => $baseDir . '/includes/Integrations/Main.php',
     'Reepay\\Checkout\\Integrations\\PWGiftCardsIntegration' => $baseDir . '/includes/Integrations/PWGiftCardsIntegration.php',
+    'Reepay\\Checkout\\Integrations\\PolylangIntegration' => $baseDir . '/includes/Integrations/PolylangIntegration.php',
     'Reepay\\Checkout\\Integrations\\WCGiftCardsIntegration' => $baseDir . '/includes/Integrations/WCGiftCardsIntegration.php',
     'Reepay\\Checkout\\Integrations\\WPCProductBundlesWooCommerceIntegration' => $baseDir . '/includes/Integrations/WPCProductBundlesWooCommerceIntegration.php',
     'Reepay\\Checkout\\Integrations\\WooBlocks\\WooBlocksIntegration' => $baseDir . '/includes/Integrations/WooBlocks/WooBlocksIntegration.php',
