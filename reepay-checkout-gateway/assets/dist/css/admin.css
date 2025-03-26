@@ -30,15 +30,24 @@
 .reepay-admin-section-li-small.reepay-invoice-status-refunded {
   color: red;
 }
-.reepay-admin-section-li-header {
+.reepay-admin-section-li-small-header {
   width: 100%;
   font-weight: bold;
 }
-.reepay-admin-section-li-header-small {
+.reepay-admin-section-li-small-header-small {
   width: 100%;
   font-weight: bold;
   font-size: small;
   margin-bottom: 0;
+}
+.reepay-admin-section-li-small .capture-amount-button {
+  width: 100%;
+}
+.reepay-admin-section-li .capture-amount-input {
+  width: 80%;
+  font-size: 11px;
+  height: 20px;
+  min-height: unset;
 }
 .reepay-admin-card-logo {
   text-align: center;
@@ -76,6 +85,14 @@
   display: -ms-flexbox;
   display: -webkit-flex;
   display: flex;
+}
+.reepay-balance__capture-amount {
+  display: inline-flex;
+  align-items: center;
+}
+.reepay-balance__capture-amount-input {
+  display: inline-flex;
+  align-items: center;
 }
 
 .reepay-partly_capture_amount, .reepay-partly_refund_amount {
