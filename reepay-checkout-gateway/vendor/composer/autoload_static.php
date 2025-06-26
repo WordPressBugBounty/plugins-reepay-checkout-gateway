@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f
+class ComposerStaticInit090f838da816d5d6a560158f24fea088
 {
     public static $prefixLengthsPsr4 = array (
         'R' => 
@@ -36,7 +36,6 @@ class ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f
     );
 
     public static $classMap = array (
-        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Reepay\\Checkout\\Actions\\Admin' => __DIR__ . '/../..' . '/includes/Actions/Admin.php',
         'Reepay\\Checkout\\Actions\\Checkout' => __DIR__ . '/../..' . '/includes/Actions/Checkout.php',
         'Reepay\\Checkout\\Actions\\Main' => __DIR__ . '/../..' . '/includes/Actions/Main.php',
@@ -151,9 +150,9 @@ class ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit090f838da816d5d6a560158f24fea088::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit090f838da816d5d6a560158f24fea088::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit090f838da816d5d6a560158f24fea088::$classMap;
 
         }, null, ClassLoader::class);
     }
