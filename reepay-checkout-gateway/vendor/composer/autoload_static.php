@@ -132,6 +132,7 @@ class ComposerStaticInit090f838da816d5d6a560158f24fea088
         'Reepay\\Checkout\\Tests\\Helpers\\Reepay_UnitTestCase_Trait' => __DIR__ . '/../..' . '/tests/helpers/Reepay_UnitTestCase_Trait.php',
         'Reepay\\Checkout\\Tests\\Helpers\\Reepay_UnitTestCase_Trait_Tokens' => __DIR__ . '/../..' . '/tests/helpers/Reepay_UnitTestCase_Trait_Tokens.php',
         'Reepay\\Checkout\\Tests\\Mocks\\OrderFlow\\OrderCaptureMock' => __DIR__ . '/../..' . '/tests/mocks/OrderFlow/OrderCaptureMock.php',
+        'Reepay\\Checkout\\Tests\\Unit\\Api\\ApiBundleProductFilterTest' => __DIR__ . '/../..' . '/tests/unit/api/ApiBundleProductFilterTest.php',
         'Reepay\\Checkout\\Tests\\Unit\\Api\\ApiSkipOrderLinesWithTaxTest' => __DIR__ . '/../..' . '/tests/unit/api/ApiSkipOrderLinesWithTaxTest.php',
         'Reepay\\Checkout\\Tests\\Unit\\Functions\\CurrencyTest' => __DIR__ . '/../..' . '/tests/unit/Functions/CurrencyTest.php',
         'Reepay\\Checkout\\Tests\\Unit\\Functions\\CustomerTest' => __DIR__ . '/../..' . '/tests/unit/Functions/CustomerTest.php',
