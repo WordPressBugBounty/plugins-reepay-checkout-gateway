@@ -772,6 +772,34 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 	 * @throws Exception If payment error.
 	 */
 	public function process_payment( $order_id ) {
+		// VALIDATION: Check guest checkout settings (BWPM-178, BWPM-184)
+		// Prevent guest users from checking out when guest checkout is disabled
+		// BUT allow account creation during checkout if registration is enabled.
+		if ( ! is_user_logged_in() &&
+			WC()->checkout()->is_registration_required() &&
+			! WC()->checkout()->is_registration_enabled() ) {
+
+			$this->log(
+				array(
+					'source'   => 'process_payment_guest_checkout_blocked',
+					'order_id' => $order_id,
+					'message'  => 'Guest checkout is disabled, registration is disabled, and user is not logged in',
+				)
+			);
+
+			wc_add_notice(
+				sprintf(
+					/* translators: 1: login URL, 2: register URL */
+					__( 'You must be logged in to checkout. Please <a href="%1$s" class="showlogin">log in</a> or <a href="%2$s">create an account</a> to continue.', 'reepay-checkout-gateway' ),
+					esc_url( wc_get_page_permalink( 'myaccount' ) ),
+					esc_url( wc_get_account_endpoint_url( 'register' ) )
+				),
+				'error'
+			);
+
+			return false;
+		}
+
 		$is_woo_blocks_checkout_request = false;
 
 		if ( isset( $_SERVER['CONTENT_TYPE'] ) && 'application/json' === $_SERVER['CONTENT_TYPE'] ) {
@@ -1112,6 +1140,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			} else {
 				try {
 					ReepayTokens::assign_payment_token( $order, $token );
+					// Use legacy method for zero amount orders (no invoice created yet).
 					ReepayTokens::save_card_info_to_order( $order, $token->get_token() );
 					$this->log(
 						array(
@@ -1214,6 +1243,27 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 							'result'   => is_array( $result ) ? array_keys( $result ) : 'non-array-result',
 						)
 					);
+
+					// Save card information from invoice (after direct charge creates invoice).
+					try {
+						ReepayTokens::save_card_info_from_invoice( $order );
+						$this->log(
+							array(
+								'source'   => 'process_payment_saved_card_info_from_invoice',
+								'order_id' => $order_id,
+								'token'    => $token->get_token(),
+							)
+						);
+					} catch ( Exception $e ) {
+						// Log error but don't fail the payment process.
+						$this->log(
+							array(
+								'source'   => 'process_payment_saved_card_info_failed',
+								'order_id' => $order_id,
+								'error'    => $e->getMessage(),
+							)
+						);
+					}
 				}
 
 				do_action( 'reepay_instant_settle', $order );
@@ -1671,6 +1721,17 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 					'order_id'   => $order->get_id(),
 					'session_id' => $result['id'],
 					'has_url'    => ! empty( $result['url'] ),
+				)
+			);
+
+			$this->log(
+				array(
+					'source'       => 'process_session_charge_payment_window_display_debug',
+					'order_id'     => $order->get_id(),
+					'payment_type' => $this->payment_type,
+					'accept_url'   => $this->get_return_url( $order ),
+					'result_url'   => $result['url'] ?? 'N/A',
+					'note'         => 'This should check payment_type before returning hash redirect',
 				)
 			);
 
@@ -2208,40 +2269,21 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 			return;
 		}
 
+		// Add root-level minimum_user_age parameter.
+		$params['minimum_user_age'] = $max_age;
+
 		// Initialize session_data if not exists.
 		$session_data_existed = isset( $params['session_data'] );
 		if ( ! $session_data_existed ) {
 			$params['session_data'] = array();
 		}
 
-		// Add age verification data based on payment method.
-		$fields_added = array();
-		$log_source   = '';
+		// Add both age verification keys to session_data (always send both regardless of payment method).
+		$params['session_data']['mpo_minimum_user_age']            = $max_age;
+		$params['session_data']['vipps_epayment_minimum_user_age'] = $max_age;
 
-		switch ( $payment_method ) {
-			case 'reepay_mobilepay':
-			case 'reepay_mobilepay_subscriptions':
-				$params['session_data']['mpo_minimum_user_age'] = $max_age;
-				$fields_added                                   = array( 'mpo_minimum_user_age' );
-				$log_source                                     = 'add_age_verification_mobilepay_configured';
-				break;
-
-			case 'reepay_vipps':
-			case 'reepay_vipps_recurring':
-				$params['session_data']['vipps_epayment_minimum_user_age'] = $max_age;
-				$fields_added = array( 'vipps_epayment_minimum_user_age' );
-				$log_source   = 'add_age_verification_vipps_configured';
-				break;
-
-			case 'reepay_checkout':
-			default:
-				// For main payment method or unknown methods, add both keys.
-				$params['session_data']['mpo_minimum_user_age']            = $max_age;
-				$params['session_data']['vipps_epayment_minimum_user_age'] = $max_age;
-				$fields_added = array( 'mpo_minimum_user_age', 'vipps_epayment_minimum_user_age' );
-				$log_source   = 'add_age_verification_default_configured';
-				break;
-		}
+		$fields_added = array( 'minimum_user_age', 'mpo_minimum_user_age', 'vipps_epayment_minimum_user_age' );
+		$log_source   = 'add_age_verification_all_fields_configured';
 
 		// Single log entry for all payment methods.
 		$this->log(
@@ -2263,7 +2305,7 @@ abstract class ReepayGateway extends WC_Payment_Gateway {
 				'age_verification_fields' => array_filter(
 					$params['session_data'],
 					function ( $key ) {
-						return in_array( $key, array( 'mpo_minimum_user_age', 'vipps_epayment_minimum_user_age' ) );
+						return in_array( $key, array( 'mpo_minimum_user_age', 'vipps_epayment_minimum_user_age' ), true );
 					},
 					ARRAY_FILTER_USE_KEY
 				),

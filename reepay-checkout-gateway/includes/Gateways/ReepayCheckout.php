@@ -10,6 +10,7 @@ namespace Reepay\Checkout\Gateways;
 
 use Exception;
 use Reepay\Checkout\Utils\LoggingTrait;
+use Reepay\Checkout\Utils\MetaField;
 use Reepay\Checkout\Plugin\Statistics;
 use Reepay\Checkout\Tokens\ReepayTokens;
 use Reepay\Checkout\OrderFlow\InstantSettle;
@@ -393,6 +394,62 @@ class ReepayCheckout extends ReepayGateway {
 				'description' => __( 'In case if invoice with current handle was settled before, plugin will generate unique handle', 'reepay-checkout-gateway' ),
 				'default'     => 'yes',
 			),
+			'order_handle_prefix'        => array(
+				'title'             => __( 'Order Handle Prefix', 'reepay-checkout-gateway' ),
+				'type'              => 'text',
+				'description'       => sprintf(
+					__( 'Prefix for Frisbii order handles.<br><strong>Prefix "order-" makes the order handle "order-123456", for example.</strong><br><br><strong>Note:</strong> Add hyphen (-) or underscore (_) at the end if you want separation. Maximum 8 characters allowed.', 'reepay-checkout-gateway' ),
+				),
+				'default'           => 'order-',
+				'desc_tip'          => false,
+				'placeholder'       => 'order-',
+				'sanitize_callback' => function ( $value ) {
+					if ( empty( $value ) ) {
+						return '';
+					}
+
+					$value = trim( $value );
+					if ( strlen( $value ) > 8 ) {
+						throw new Exception(
+							sprintf(
+								/* translators: 1: actual character count, 2: maximum allowed character count */
+								esc_html__( 'Order handle prefix is too long (%1$d characters). Maximum allowed: %2$d characters (reserving 12 for order number, total max: 20 characters as per Frisbii API).', 'reepay-checkout-gateway' ),
+								strlen( $value ),
+								8
+							)
+						);
+					}
+					if ( ! preg_match( '/^[a-zA-Z0-9_-]+$/', $value ) ) {
+						throw new Exception(
+							sprintf(
+								/* translators: %s: the invalid prefix value */
+								esc_html__( 'Invalid prefix "%s". Only these characters are allowed: Letters (a-z, A-Z), Numbers (0-9), Hyphens (-), Underscores (_). Special characters like @, #, $, !, spaces, etc. are not allowed.', 'reepay-checkout-gateway' ),
+								esc_html( $value )
+							)
+						);
+					}
+					if ( preg_match( '/^[-_]/', $value ) ) {
+						throw new Exception(
+							sprintf(
+								/* translators: %s: the invalid prefix value */
+								esc_html__( 'Invalid prefix "%s". The prefix cannot start with a hyphen (-) or underscore (_). Try adding letters or numbers at the beginning. Examples: "[order-]", "[order_]"', 'reepay-checkout-gateway' ),
+								esc_html( $value )
+							)
+						);
+					}
+					if ( preg_match( '/[-_]{2,}/', $value ) ) {
+						throw new Exception(
+							sprintf(
+								/* translators: %s: the invalid prefix value */
+								esc_html__( 'Invalid prefix "%s". The prefix cannot contain consecutive hyphens (--) or underscores (__). Use single hyphens or underscores only. Example: "[order-2024]" instead of "[order--2024]"', 'reepay-checkout-gateway' ),
+								esc_html( $value )
+							)
+						);
+					}
+
+					return sanitize_text_field( $value );
+				},
+			),
 			'skip_order_lines'           => array(
 				'title'       => __( 'Skip order lines', 'reepay-checkout-gateway' ),
 				'description' => __( 'Select if order lines should not be send to Frisbii Pay', 'reepay-checkout-gateway' ),
@@ -404,12 +461,12 @@ class ReepayCheckout extends ReepayGateway {
 				'default'     => 'no',
 			),
 			'enable_order_autocancel'    => array(
-				'title'       => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
-				'description' => __( 'The automatic order auto-cancel', 'reepay-checkout-gateway' ),
+				'title'       => __( 'Order auto-cancel', 'reepay-checkout-gateway' ),
+				'description' => __( 'Allow or prefer no automatic order cancel', 'reepay-checkout-gateway' ),
 				'type'        => 'select',
 				'options'     => array(
-					'yes' => 'Enable auto-cancel',
-					'no'  => 'Ignore / disable auto-cancel',
+					'yes' => 'Allow auto-cancel',
+					'no'  => 'Prefer no auto-cancel',
 				),
 				'default'     => 'no',
 			),
@@ -670,11 +727,31 @@ class ReepayCheckout extends ReepayGateway {
 			$this->tokenization_script();
 
 			if ( 'yes' === $this->save_cc ) {
-				$this->saved_payment_methods();
+				// Don't show saved cards if there are age restricted products in the cart.
+				if ( ! $this->has_age_restricted_products_in_cart() ) {
+					$this->saved_payment_methods();
+				}
 			}
 
 			$this->save_payment_method_checkbox();
 		}
+	}
+
+	/**
+	 * Check if there are age restricted products in the cart
+	 *
+	 * @return bool True if there are age restricted products in cart
+	 */
+	private function has_age_restricted_products_in_cart(): bool {
+		// Check if global age verification is enabled.
+		if ( ! MetaField::is_global_age_verification_enabled() ) {
+			return false;
+		}
+
+		// Get age restricted products from cart.
+		$age_restricted_products = MetaField::get_age_restricted_products_in_cart();
+
+		return ! empty( $age_restricted_products );
 	}
 
 	/**
@@ -716,6 +793,20 @@ class ReepayCheckout extends ReepayGateway {
 			}
 
 			$token = ReepayTokens::reepay_save_token( $order, $reepay_token );
+
+			// Save card information from invoice.
+			try {
+				ReepayTokens::save_card_info_from_invoice( $order );
+			} catch ( Exception $e ) {
+				// Log error but don't fail the process.
+				$this->log(
+					array(
+						'source'   => 'reepay_finalize_save_card_error',
+						'order_id' => $order->get_id(),
+						'error'    => $e->getMessage(),
+					)
+				);
+			}
 
 			// translators: %s new payment method name.
 			$order->add_order_note( sprintf( __( 'Payment method changed to "%s"', 'reepay-checkout-gateway' ), $token->get_display_name() ) );
@@ -791,9 +882,19 @@ class ReepayCheckout extends ReepayGateway {
 	 */
 	public function get_localize_script_data(): array {
 		return array(
-			'payment_type' => $this->payment_type,
-			'cancel_text'  => __( 'Payment was canceled, please try again', 'reepay-checkout-gateway' ),
-			'error_text'   => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
+			'payment_type'                 => $this->payment_type,
+			'cancel_text'                  => __( 'Payment was canceled, please try again', 'reepay-checkout-gateway' ),
+			'error_text'                   => __( 'Error with payment, please try again', 'reepay-checkout-gateway' ),
+			// Guest checkout validation (BWPM-178, BWPM-184).
+			'guest_checkout_disabled'      => WC()->checkout()->is_registration_required(),
+			'registration_enabled'         => WC()->checkout()->is_registration_enabled(),
+			'is_user_logged_in'            => is_user_logged_in(),
+			'guest_checkout_error_message' => sprintf(
+				/* translators: 1: login URL, 2: register URL */
+				__( 'You must be logged in to checkout. Please <a href="%1$s" class="showlogin">log in</a> or <a href="%2$s">create an account</a> to continue.', 'reepay-checkout-gateway' ),
+				esc_url( wc_get_page_permalink( 'myaccount' ) ),
+				esc_url( wc_get_account_endpoint_url( 'register' ) )
+			),
 		);
 	}
 

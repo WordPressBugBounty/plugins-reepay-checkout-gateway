@@ -4,10 +4,10 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit090f838da816d5d6a560158f24fea088
+class ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f
 {
     public static $prefixLengthsPsr4 = array (
-        'R' => 
+        'R' =>
         array (
             'Reepay\\Checkout\\Tests\\Unit\\' => 27,
             'Reepay\\Checkout\\Tests\\Mocks\\' => 28,
@@ -17,25 +17,26 @@ class ComposerStaticInit090f838da816d5d6a560158f24fea088
     );
 
     public static $prefixDirsPsr4 = array (
-        'Reepay\\Checkout\\Tests\\Unit\\' => 
+        'Reepay\\Checkout\\Tests\\Unit\\' =>
         array (
             0 => __DIR__ . '/../..' . '/tests/unit',
         ),
-        'Reepay\\Checkout\\Tests\\Mocks\\' => 
+        'Reepay\\Checkout\\Tests\\Mocks\\' =>
         array (
             0 => __DIR__ . '/../..' . '/tests/mocks',
         ),
-        'Reepay\\Checkout\\Tests\\Helpers\\' => 
+        'Reepay\\Checkout\\Tests\\Helpers\\' =>
         array (
             0 => __DIR__ . '/../..' . '/tests/helpers',
         ),
-        'Reepay\\Checkout\\' => 
+        'Reepay\\Checkout\\' =>
         array (
             0 => __DIR__ . '/../..' . '/includes',
         ),
     );
 
     public static $classMap = array (
+        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Reepay\\Checkout\\Actions\\Admin' => __DIR__ . '/../..' . '/includes/Actions/Admin.php',
         'Reepay\\Checkout\\Actions\\Checkout' => __DIR__ . '/../..' . '/includes/Actions/Checkout.php',
         'Reepay\\Checkout\\Actions\\Main' => __DIR__ . '/../..' . '/includes/Actions/Main.php',
@@ -134,8 +135,6 @@ class ComposerStaticInit090f838da816d5d6a560158f24fea088
         'Reepay\\Checkout\\Tests\\Helpers\\Reepay_UnitTestCase_Trait' => __DIR__ . '/../..' . '/tests/helpers/Reepay_UnitTestCase_Trait.php',
         'Reepay\\Checkout\\Tests\\Helpers\\Reepay_UnitTestCase_Trait_Tokens' => __DIR__ . '/../..' . '/tests/helpers/Reepay_UnitTestCase_Trait_Tokens.php',
         'Reepay\\Checkout\\Tests\\Mocks\\OrderFlow\\OrderCaptureMock' => __DIR__ . '/../..' . '/tests/mocks/OrderFlow/OrderCaptureMock.php',
-        'Reepay\\Checkout\\Tests\\Unit\\Api\\ApiBundleProductFilterTest' => __DIR__ . '/../..' . '/tests/unit/api/ApiBundleProductFilterTest.php',
-        'Reepay\\Checkout\\Tests\\Unit\\Api\\ApiSkipOrderLinesWithTaxTest' => __DIR__ . '/../..' . '/tests/unit/api/ApiSkipOrderLinesWithTaxTest.php',
         'Reepay\\Checkout\\Tests\\Unit\\Functions\\CurrencyTest' => __DIR__ . '/../..' . '/tests/unit/Functions/CurrencyTest.php',
         'Reepay\\Checkout\\Tests\\Unit\\Functions\\CustomerTest' => __DIR__ . '/../..' . '/tests/unit/Functions/CustomerTest.php',
         'Reepay\\Checkout\\Tests\\Unit\\Functions\\FormatTest' => __DIR__ . '/../..' . '/tests/unit/Functions/FormatTest.php',
@@ -155,9 +154,9 @@ class ComposerStaticInit090f838da816d5d6a560158f24fea088
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit090f838da816d5d6a560158f24fea088::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit090f838da816d5d6a560158f24fea088::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit090f838da816d5d6a560158f24fea088::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f::$classMap;
 
         }, null, ClassLoader::class);
     }

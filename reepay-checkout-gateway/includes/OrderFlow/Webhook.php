@@ -99,9 +99,15 @@ class Webhook {
 	 */
 	public function process( array $data ) {
 		// Log caller information to reepay_order_statuses log.
-		$backtrace    = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
-		$caller       = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
-		$caller_class = isset( $backtrace[1]['class'] ) ? $backtrace[1]['class'] . '::' : '';
+		$caller       = 'unknown';
+		$caller_class = '';
+
+		// Only collect backtrace information when debugging is enabled.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$backtrace    = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+			$caller       = isset( $backtrace[1] ) ? $backtrace[1]['function'] : 'unknown';
+			$caller_class = isset( $backtrace[1]['class'] ) ? $backtrace[1]['class'] . '::' : '';
+		}
 
 		if ( function_exists( 'wc_get_logger' ) ) {
 			wc_get_logger()->debug(
@@ -200,6 +206,21 @@ class Webhook {
 							$data['transaction']
 						),
 						$data['transaction']
+					);
+				}
+
+				// Save card information from invoice.
+				try {
+					ReepayTokens::save_card_info_from_invoice( $order, $data['invoice'] );
+				} catch ( Exception $e ) {
+					// Log error but don't fail webhook processing.
+					$this->log(
+						sprintf(
+							'WebHook invoice_authorized: Failed to save card info. Order: %d, Invoice: %s, Error: %s',
+							$order->get_id(),
+							$data['invoice'],
+							$e->getMessage()
+						)
 					);
 				}
 
@@ -346,6 +367,49 @@ class Webhook {
 							'_legacy' => true,
 						)
 					);
+				}
+
+				// Save card information from invoice.
+				try {
+					ReepayTokens::save_card_info_from_invoice( $order, $data['invoice'] );
+				} catch ( Exception $e ) {
+					// Log error but don't fail webhook processing.
+					$this->log(
+						sprintf(
+							'WebHook invoice_settled: Failed to save card info. Order: %d, Invoice: %s, Error: %s',
+							$order->get_id(),
+							$data['invoice'],
+							$e->getMessage()
+						)
+					);
+				}
+
+				// For subscription renewals, also update parent subscription order.
+				if ( isset( $data['subscription'] ) ) {
+					$subscription_order = rp_get_order_by_subscription_handle( $data['subscription'] );
+					if ( $subscription_order && $subscription_order->get_id() !== $order->get_id() ) {
+						try {
+							ReepayTokens::save_card_info_from_invoice( $subscription_order, $data['invoice'] );
+							$this->log(
+								sprintf(
+									'WebHook invoice_settled: Saved card info for subscription order. Subscription Order: %d, Renewal Order: %d, Invoice: %s',
+									$subscription_order->get_id(),
+									$order->get_id(),
+									$data['invoice']
+								)
+							);
+						} catch ( Exception $e ) {
+							// Log error but don't fail webhook processing.
+							$this->log(
+								sprintf(
+									'WebHook invoice_settled: Failed to save card info for subscription order. Subscription Order: %d, Invoice: %s, Error: %s',
+									$subscription_order->get_id(),
+									$data['invoice'],
+									$e->getMessage()
+								)
+							);
+						}
+					}
 				}
 
 				$order->update_meta_data( '_reepay_capture_transaction', $data['transaction'] );
