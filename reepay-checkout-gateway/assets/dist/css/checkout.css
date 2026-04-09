@@ -1,7 +1,6 @@
 #payment .reepay-logos li {
   list-style: none;
 }
-#payment li.payment_method_reepay_applepay,
 #payment li.payment_method_reepay_googlepay {
   display: none;
 }
