@@ -7,7 +7,7 @@ namespace Composer\Autoload;
 class ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f
 {
     public static $prefixLengthsPsr4 = array (
-        'R' =>
+        'R' => 
         array (
             'Reepay\\Checkout\\Tests\\Unit\\' => 27,
             'Reepay\\Checkout\\Tests\\Mocks\\' => 28,
@@ -17,19 +17,19 @@ class ComposerStaticInita5b1a5c0d67993a5e7cf348b58b6a70f
     );
 
     public static $prefixDirsPsr4 = array (
-        'Reepay\\Checkout\\Tests\\Unit\\' =>
+        'Reepay\\Checkout\\Tests\\Unit\\' => 
         array (
             0 => __DIR__ . '/../..' . '/tests/unit',
         ),
-        'Reepay\\Checkout\\Tests\\Mocks\\' =>
+        'Reepay\\Checkout\\Tests\\Mocks\\' => 
         array (
             0 => __DIR__ . '/../..' . '/tests/mocks',
         ),
-        'Reepay\\Checkout\\Tests\\Helpers\\' =>
+        'Reepay\\Checkout\\Tests\\Helpers\\' => 
         array (
             0 => __DIR__ . '/../..' . '/tests/helpers',
         ),
-        'Reepay\\Checkout\\' =>
+        'Reepay\\Checkout\\' => 
         array (
             0 => __DIR__ . '/../..' . '/includes',
         ),
