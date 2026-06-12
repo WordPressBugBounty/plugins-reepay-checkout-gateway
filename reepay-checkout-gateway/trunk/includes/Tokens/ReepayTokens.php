@@ -1,0 +1,518 @@
+<?php
+/**
+ * Trait for working with tokens
+ *
+ * @package Reepay\Checkout\Tokens
+ */
+
+namespace Reepay\Checkout\Tokens;
+
+use Exception;
+use Reepay\Checkout\Api;
+use WC_Order;
+use WC_Subscription;
+use WC_Payment_Token;
+use WC_Payment_Tokens;
+use WP_Error;
+
+defined( 'ABSPATH' ) || exit();
+
+/**
+ * Trait TokenReepayTrait
+ *
+ * @package Reepay\Checkout\Tokens
+ */
+abstract class ReepayTokens {
+	/**
+	 * Assign payment token to order.
+	 *
+	 * @param WC_Order                                           $order order to assign.
+	 * @param TokenReepay|TokenReepayMS|TokenReepayVR|int|string $token token class, token id or token string.
+	 *
+	 * @return void
+	 *
+	 * @throws Exception If invalid token or order.
+	 */
+	public static function assign_payment_token( WC_Order $order, $token ) {
+		if ( is_numeric( $token ) ) {
+			$token = WC_Payment_Tokens::get( $token );
+		} elseif ( is_string( $token ) ) {
+			$token = self::get_payment_token( $token );
+		}
+
+		if ( ! $token instanceof TokenReepay && ! $token instanceof TokenReepayMS && ! $token instanceof TokenReepayVR ) {
+			throw new Exception( 'Invalid token parameter' );
+		}
+
+		if ( $token->get_id() ) {
+
+			// Reload order.
+			$order = wc_get_order( $order->get_id() );
+			// Delete tokens if exist.
+			$order->delete_meta_data( '_payment_tokens' );
+			// Add payment token.
+			$order->add_payment_token( $token );
+
+			$order->update_meta_data( '_reepay_token_id', $token->get_id() );
+			$order->update_meta_data( 'reepay_token', $token->get_token() );
+			$order->update_meta_data( '_reepay_token', $token->get_token() );
+			$order->save_meta_data();
+		}
+	}
+
+	/**
+	 * Save Payment Token
+	 *
+	 * @param WC_Order $order        order to save.
+	 * @param string   $reepay_token token to save.
+	 *
+	 * @return WC_Payment_Token
+	 *
+	 * @throws Exception If invalid token or order.
+	 */
+	public static function reepay_save_token( WC_Order $order, string $reepay_token ): ?WC_Payment_Token {
+		// Check if token is exists in WooCommerce.
+		$token = self::get_payment_token( $reepay_token );
+
+		if ( $token ) {
+			// Just assign token to order.
+			self::assign_payment_token( $order, $token );
+		} else {
+			// Create and assign payment token.
+			$token = self::add_payment_token_to_order( $order, $reepay_token );
+		}
+
+		// Note: Card info will be saved later via webhook or finalize process
+		// when invoice is created in Frisbii. Don't call save_card_info_from_invoice here
+		// as invoice may not exist yet.
+
+		return $token;
+	}
+
+	/**
+	 * Save card information from Frisbii Invoice API
+	 *
+	 * @param WC_Order    $order         Order to save card info.
+	 * @param string|null $invoice_handle Optional invoice handle (auto-detect if null).
+	 *
+	 * @return bool Success/failure
+	 * @throws Exception If API call fails or data invalid.
+	 */
+	public static function save_card_info_from_invoice( WC_Order $order, ?string $invoice_handle = null ): bool {
+		$start_time = microtime( true );
+
+		try {
+			// Get invoice handle.
+			if ( empty( $invoice_handle ) ) {
+				$invoice_handle = rp_get_order_handle( $order );
+			}
+
+			if ( empty( $invoice_handle ) ) {
+				throw new Exception( 'Empty invoice handle' );
+			}
+
+			// Check cache first.
+			$cache_key        = 'reepay_invoice_card_' . $invoice_handle;
+			$card_transaction = wp_cache_get( $cache_key );
+
+			if ( false === $card_transaction ) {
+				// Get invoice data from API.
+				$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+
+				if ( is_wp_error( $invoice_data ) ) {
+					throw new Exception( 'Failed to get invoice data: ' . $invoice_data->get_error_message() );
+				}
+
+				// Extract card transaction from invoice.
+				if ( empty( $invoice_data['transactions'] ) || empty( $invoice_data['transactions'][0] ) ) {
+					throw new Exception( 'No transactions found in invoice' );
+				}
+
+				$transaction = $invoice_data['transactions'][0];
+
+				if ( empty( $transaction['card_transaction'] ) ) {
+					throw new Exception( 'No card transaction found' );
+				}
+
+				$card_transaction = $transaction['card_transaction'];
+
+				// Cache for 5 minutes.
+				wp_cache_set( $cache_key, $card_transaction, '', 300 );
+			}
+
+			// Extract and sanitize card information.
+			$card_type   = \sanitize_text_field( $card_transaction['card_type'] ?? '' );
+			$masked_card = \sanitize_text_field( $card_transaction['masked_card'] ?? '' );
+			$provider    = \sanitize_text_field( $card_transaction['provider'] ?? '' );
+
+			// Validate required fields.
+			if ( empty( $card_type ) || empty( $masked_card ) ) {
+				throw new Exception( 'Missing required card information' );
+			}
+
+			// Save card information to order meta.
+			$order->update_meta_data( 'reepay_card_type', $card_type );
+			$order->update_meta_data( 'reepay_masked_card', $masked_card );
+
+			if ( ! empty( $provider ) ) {
+				$order->update_meta_data( 'reepay_acquirer', $provider );
+			}
+
+			// Save complete card transaction data.
+			$order->update_meta_data( '_reepay_source', $card_transaction );
+			$order->save_meta_data();
+
+			// Log success.
+			$execution_time = \microtime( true ) - $start_time;
+			if ( \function_exists( 'wc_get_logger' ) ) {
+				\wc_get_logger()->info(
+					\sprintf(
+						'Card info saved from invoice. Order: %d, Invoice: %s, Card: %s, Provider: %s, Time: %.3fs',
+						$order->get_id(),
+						$invoice_handle,
+						$masked_card,
+						$provider,
+						$execution_time
+					),
+					array( 'source' => 'reepay-save-card-info' )
+				);
+			}
+
+			return true;
+
+		} catch ( Exception $e ) {
+			$execution_time = \microtime( true ) - $start_time;
+
+			// Log error.
+			if ( \function_exists( 'wc_get_logger' ) ) {
+				\wc_get_logger()->error(
+					\sprintf(
+						'Failed to save card info from invoice. Order: %d, Invoice: %s, Error: %s, Time: %.3fs',
+						$order->get_id(),
+						$invoice_handle ?? 'unknown',
+						$e->getMessage(),
+						$execution_time
+					),
+					array( 'source' => 'reepay-save-card-info' )
+				);
+			}
+
+			throw $e;
+		}
+	}
+
+	/**
+	 * Save Payment Data (card type and masked card) - Legacy Method
+	 *
+	 * This method should be used ONLY when invoice is not yet created in Frisbii.
+	 * For saved cards after invoice creation, use save_card_info_from_invoice() instead.
+	 *
+	 * @param WC_Order     $order     order to save.
+	 * @param string|array $card_info card token or card info.
+	 *
+	 * @throws Exception If invalid token or order.
+	 */
+	public static function save_card_info_to_order( WC_Order $order, $card_info ) {
+		// Use legacy token-based method (for backward compatibility).
+		if ( \is_string( $card_info ) ) {
+			$customer_handle = rp_get_customer_handle( $order->get_customer_id() );
+			$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $card_info );
+
+			if ( is_wp_error( $card_info ) ) {
+				throw new Exception( esc_html__( 'Card not found', 'reepay-checkout-gateway' ) );
+			}
+		}
+
+		if ( ! empty( $card_info['masked_card'] ) ) {
+			$order->update_meta_data( 'reepay_masked_card', $card_info['masked_card'] );
+		}
+
+		if ( ! empty( $card_info['card_type'] ) ) {
+			$order->update_meta_data( 'reepay_card_type', $card_info['card_type'] );
+		}
+
+		// Note: Legacy method may not have provider/acquirer info.
+		$order->update_meta_data( '_reepay_source', $card_info );
+		$order->save_meta_data();
+
+		// Log usage of legacy method.
+		if ( \function_exists( 'wc_get_logger' ) ) {
+			\wc_get_logger()->info(
+				\sprintf(
+					'Used legacy save_card_info_to_order method. Order: %d, Card: %s',
+					$order->get_id(),
+					$card_info['masked_card'] ?? 'unknown'
+				),
+				array( 'source' => 'reepay-save-card-info' )
+			);
+		}
+	}
+
+	/**
+	 * Add Payment Token.
+	 *
+	 * @param WC_Order $order        order to add token.
+	 * @param string   $reepay_token token to add.
+	 *
+	 * @return WC_Payment_Token
+	 * @throws Exception If invalid token or order.
+	 */
+	public static function add_payment_token_to_order( WC_Order $order, string $reepay_token ): WC_Payment_Token {
+		[ //phpcs:ignore Generic.Arrays.DisallowShortArraySyntax.Found
+			'token'     => $token,
+			'card_info' => $card_info,
+		] = self::add_payment_token_to_customer( $order->get_customer_id(), $reepay_token );
+
+		self::save_card_info_to_order( $order, $card_info );
+
+		self::assign_payment_token( $order, $token );
+
+		return $token;
+	}
+
+	/**
+	 * Add payment token to customer
+	 *
+	 * @param int          $customer_id customer id to add token.
+	 * @param string|array $card_info   card token or card info.
+	 *
+	 * @return array
+	 * @throws Exception If invalid token or order.
+	 */
+	public static function add_payment_token_to_customer( int $customer_id, $card_info ): array {
+		if ( empty( $card_info ) ) {
+			return array(
+				'token'     => false,
+				'card_info' => $card_info,
+			);
+		}
+
+		if ( is_string( $card_info ) ) {
+			$customer_handle = rp_get_customer_handle( $customer_id );
+			$card_info       = reepay()->api( 'tokens' )->get_reepay_cards( $customer_handle, $card_info );
+		}
+
+		if ( is_wp_error( $card_info ) || empty( $card_info ) ) {
+			throw new Exception( esc_html__( 'Card not found', 'reepay-checkout-gateway' ) );
+		}
+
+		// Check if token already exists to prevent duplicates.
+		$existing_token = self::get_payment_token( $card_info['id'] );
+		if ( $existing_token && $existing_token->get_user_id() === $customer_id ) {
+			return array(
+				'token'     => $existing_token,
+				'card_info' => $card_info,
+			);
+		}
+
+		// Additional check using user-specific method.
+		if ( self::user_has_token( $customer_id, $card_info['id'] ) ) {
+			$existing_token = self::get_payment_token( $card_info['id'] );
+			if ( $existing_token ) {
+				return array(
+					'token'     => $existing_token,
+					'card_info' => $card_info,
+				);
+			}
+		}
+
+		if ( 'ms_' === substr( $card_info['id'], 0, 3 ) ) {
+			$token = new TokenReepayMS();
+			$token->set_gateway_id( reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id );
+			$token->set_token( $card_info['id'] );
+			$token->set_user_id( $customer_id );
+		} elseif ( 'vr_' === substr( $card_info['id'], 0, 3 ) ) {
+			$token = new TokenReepayVR();
+			$token->set_gateway_id( reepay()->gateways()->get_gateway( 'reepay_vipps_recurring' )->id );
+			$token->set_token( $card_info['id'] );
+			$token->set_user_id( $customer_id );
+		} else {
+			$token = new TokenReepay();
+			$token->set_gateway_id( reepay()->gateways()->checkout()->id );
+			$token->set_token( $card_info['id'] );
+			$token->set_user_id( $customer_id );
+
+			$expiry_date = explode( '-', $card_info['exp_date'] );
+
+			$token->set_last4( substr( $card_info['masked_card'], - 4 ) );
+			$token->set_expiry_year( 2000 + $expiry_date[1] );
+			$token->set_expiry_month( $expiry_date[0] );
+			$token->set_card_type( $card_info['card_type'] );
+			$token->set_masked_card( $card_info['masked_card'] );
+		}
+
+		$token->save();
+
+		return array(
+			'token'     => $token,
+			'card_info' => $card_info,
+		);
+	}
+
+	/**
+	 * Get payment token.
+	 *
+	 * @param WC_Order $order order to get token.
+	 *
+	 * @return bool|WC_Payment_Token
+	 */
+	public static function get_payment_token_by_order( WC_Order $order ) {
+		$token = $order->get_meta( '_reepay_token' );
+
+		if ( empty( $token ) ) {
+			return false;
+		}
+
+		return self::get_payment_token( $token ) ?: false;
+	}
+
+	/**
+	 * Get payment token for subscription.
+	 *
+	 * @param WC_Subscription $subscription order to get token.
+	 *
+	 * @return bool|WC_Payment_Token|null
+	 */
+	public static function get_payment_token_subscription( WC_Subscription $subscription ) {
+		$token = $subscription->get_meta( '_reepay_token' );
+		// If token wasn't stored in Subscription.
+		if ( ! is_wp_error( $token ) && empty( $token ) ) {
+			$order = $subscription->get_parent();
+			if ( ! is_wp_error( $order ) && $order ) {
+				$token = $order->get_meta( '_reepay_token' );
+				if ( ! is_wp_error( $order ) && empty( $token ) ) {
+					$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+					if ( ! empty( $invoice_data ) && ! is_wp_error( $invoice_data ) ) {
+						if ( ! empty( $invoice_data['recurring_payment_method'] ) ) {
+							$token = $invoice_data['recurring_payment_method'];
+						} elseif ( ! empty( $invoice_data['transactions'] ) ) {
+							foreach ( $invoice_data['transactions'] as $transaction ) {
+								if ( ! empty( $transaction['payment_method'] ) ) {
+									$token = $transaction['payment_method'];
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return self::get_payment_token( $token ) ?: false;
+	}
+
+	/**
+	 * Get Payment Token by Token string.
+	 *
+	 * @param string $token token string.
+	 *
+	 * @return WC_Payment_Token|null
+	 */
+	public static function get_payment_token( string $token ) {
+		global $wpdb;
+
+		if ( empty( $token ) ) {
+			return null;
+		}
+
+		$token_id = wp_cache_get( $token, 'reepay_tokens' );
+
+		if ( ! empty( $token_id ) ) {
+			return WC_Payment_Tokens::get( $token_id );
+		}
+
+		$token_id = (int) $wpdb->get_var( //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			$wpdb->prepare(
+				"SELECT token_id FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE token = %s;",
+				$token
+			)
+		);
+
+		if ( empty( $token_id ) ) {
+			return null;
+		}
+
+		wp_cache_set( $token, $token_id, 'reepay_tokens' );
+
+		return WC_Payment_Tokens::get( $token_id );
+	}
+
+	/**
+	 * Check if user already has this token to prevent duplicates
+	 *
+	 * @param int    $user_id User ID.
+	 * @param string $token   Token string.
+	 *
+	 * @return bool
+	 */
+	public static function user_has_token( int $user_id, string $token ): bool {
+		global $wpdb;
+
+		if ( empty( $token ) || $user_id < 1 ) {
+			return false;
+		}
+
+		// Create a unique cache key for this user-token combination.
+		$cache_key     = "user_{$user_id}_token_{$token}";
+		$cached_result = wp_cache_get( $cache_key, 'reepay_user_tokens' );
+
+		if ( false !== $cached_result ) {
+			return (bool) $cached_result;
+		}
+
+		$count = (int) $wpdb->get_var( //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->prefix}woocommerce_payment_tokens WHERE token = %s AND user_id = %d",
+				$token,
+				$user_id
+			)
+		);
+
+		$has_token = $count > 0;
+
+		// Cache the result for future requests.
+		wp_cache_set( $cache_key, $has_token, 'reepay_user_tokens' );
+
+		return $has_token;
+	}
+
+	/**
+	 * Delete Reepay payment method and WooCommerce token
+	 *
+	 * @param WC_Payment_Token $token token to delete.
+	 *
+	 * @return bool
+	 */
+	public static function delete_card( WC_Payment_Token $token ) {
+		$result = reepay()->api( 'api-delete-card' )->delete_payment_method( $token->get_token() );
+
+		if ( is_wp_error( $result ) && $result->get_error_code() !== Api::ERROR_CODES['Payment method not found'] ) {
+			return false;
+		}
+
+		return $token->delete();
+	}
+
+	/**
+	 * Check if $token is Reepay token
+	 *
+	 * @param WC_Payment_Token|null $token token to check.
+	 *
+	 * @return bool
+	 */
+	public static function is_reepay_token( ?WC_Payment_Token $token ): bool {
+		if ( is_null( $token ) ) {
+			return false;
+		}
+
+		return in_array(
+			$token->get_gateway_id(),
+			array(
+				reepay()->gateways()->get_gateway( 'reepay_mobilepay_subscriptions' )->id,
+				reepay()->gateways()->get_gateway( 'reepay_vipps_recurring' )->id,
+				reepay()->gateways()->checkout()->id,
+			),
+			true
+		);
+	}
+}

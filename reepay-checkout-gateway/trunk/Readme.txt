@@ -1,0 +1,321 @@
+=== Frisbii Pay ===
+Contributors: reepaydenmark,aaitse
+Tags: Frisbii, billwerk+, visa, mastercard, dankort, mobilepay
+Requires at least: 4.0
+Tested up to: 6.8
+Requires PHP: 7.4
+Stable tag: 1.8.13.1
+License: GPL
+License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html
+
+Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Frisbii Pay Gateway.
+
+== Description ==
+Accept Visa, MasterCard, Dankort, MobilePay, American Express, Diners Club and more directly on your store with the Frisbii Pay Gateway for WooCommerce.
+The Frisbii Pay plugin extends WooCommerce allowing you to take payments on your store via Frisbii Pay\'s API.
+
+== Installation ==
+See installation guide right here: https://docu.billwerk.plus/help/en/apps/woocommerce/setup-woocommerce-plugin.html
+
+== Changelog ==
+v 1.8.13.1
+- [Fix] - Updates WooCommerce supported version.
+- [Fix] - The release of v1.8.13 on WordPress Plugin Directory had 2 old asset filenames.
+- [Improvement] - Only loads Meta-fields and debug-page scripts where relevant and logs references to missing assets.
+- [Improvement] - Backend notice about High Performance Order Storage is dismissible.
+
+v 1.8.13
+- [Fix] - Enables automatic subscription payments for ApplePay.
+- [Fix] - URL to update the database from legacy versions is accessible.
+- [Fix] - Cart page shows product unit cost excluding add-on cost, similarly to checkout and order-received pages.
+- [Improvement] - Setting "Pro-rated information" is replaced with an automatic check for pro-rated products on the order.
+
+v 1.8.12
+- [Fix] - Setting "Status: Frisbii Pay Settled" applies to Subscription renewal orders.
+- [Fix] - Adds compatibility declaration for WooCommerce Blocks checkout.
+- [Improvement] - General security patches.
+
+v 1.8.11
+- [Improvement] - Applepay payment option no longer depends on device and  browser type
+
+v 1.8.10.1
+- [Fix] - Saved card issue with Applepay when Applepay is selected from the general payment method
+- [Fix] - Missing ajax nonce reference on thank you page when “Don´t show prorated information” is disabled
+
+v 1.8.10
+- [Fix] - various API-errors
+- [Improvement] - Speed of Thanks for order page with optional new setting for pro-rated information
+- [Improvement] - Added several improved UI texts and translations
+- [Improvement] - New setting: Allow partial instant settle
+- [Improvement] - 'upload_csv' and 'process_batch' security upgraded
+- [Improvement] - Gracefully handle order capture if products are deleted or inactive in WooCommerce
+
+v 1.8.9
+- [Fix] - Partial captures of an invoice with percentage discount settled one discount amount less.
+- [Fix] - Fix for do_action calls parameter count.
+- [Fix] - Display of price and charge interval in the payment window for Vipps MobilePay Recurring payment.
+
+v 1.8.8.1
+- [Fix] - Some languages supported by the Frisbii payment window could not be selected in the settings. 
+
+v 1.8.8
+- [Improvement] - Supports free subscription plans.
+– [Improvement] – Clarification of texts for the auto-cancel order setting.
+
+v 1.8.7
+- [Improvement] - New setting “Order Handle Prefix” for custom prefix in the Frisbii order handle.
+– [Improvement] – Makes acquirer & card type available for data export.
+
+v 1.8.6
+- [Fix] - Round-off issue in capture for individual order lines with setting “Exclude order lines”.
+- [Fix] - “Function _load_textdomain_just_in_time was called incorrectly.” solved.
+
+v 1.8.5.1
+- [Fix] - Account creation for subscription orders.
+
+v 1.8.5
+- [Fix] - Capture for individual order lines with discount did not include VAT.
+- [Fix] - Checkout page now displays a notice for guest users to log in if guest checkout is disabled.
+
+v 1.8.4.1
+- [Fix] - Age verification support.
+
+v 1.8.4
+- [Fix] - Can use saved card to pay for WooCommerce subscription product in WooBlocks checkout.
+- [Fix] - Saved cards can be deleted from the my-account page of the user.
+- [Improvement] - Supports age verification for specified products.
+
+v 1.8.3
+- [FIX] - In case Frisbii process a renewal successfully for a subscriptionorder that is marked as Completed in WooCommerce then the order note will not say the settlement failed and the invoice wasn't found.
+- [Fix] - Replaces calls to buggy sync_order API endpoint in WooCommerce 10.1.0.
+- [Fix] - An order note "Payment has been settled" was missing when capturing all items for orders containing bundle products.
+- [Fix] - The order is updated with any surcharge fees when charged.
+
+v 1.8.2.1
+- [Fix] - User privilege escalation vulnerability.
+
+v 1.8.2
+- [FIX] - WooCommerce Analytics totals are updated when the status of an order is changed to "Processing".
+- [FIX] - Free products caused the following products on the order not to be processed.
+- [FIX] - Order note for instant capture showed amount excluding VAT if WooCommerce was configured for prices excluding VAT.
+- [FIX] - With setting "Skip order lines" the full amount was captured for orders with both products to instant settle and not.
+
+v 1.8.1
+- [Fix] - The MobilePay logo will appear on the Vipps MobilePay Recurring payment method for currencies DKK and EUR.
+- [Fix] - The Vipps MobilePay Recurring payment method only shows for its supported currencies.
+
+v 1.8
+- [Fix] - Swish payments status failed.
+- [Fix] - Frisbii Migration tool for payment method tokens can now update old tokens with no customer ID associated.
+- [Improvement] - The Frisbii Migration tool now shows detailed feedback if some tokens could not update.
+
+v 1.7.16
+- [Fix] - Particular settings including "Instant Settle physical products" caused 1/100 amount instant settle.
+- [Improvement] - Product name change to "Frisbii Pay".
+- [Improvement] - Tested up to WordPress version 6.8 and WooCommerce version 9.8.1.
+
+v 1.7.15.1
+- [Fix] - Capture amount on orders with discounts, fees and shipping.
+
+v 1.7.15
+- [Fix] - Support for WordPress posts storage (legacy) as WooCommerce Order data storage setting.
+- [Fix] - Warning message if High Performance Order Storage is disabled or unavailable is changed to a notice.
+- [Fix] - Sends same order lines for authorize and capture to fix rounding differences in totals with discounts and price input exclusive tax.
+- [Improvement] - Adds feature to specify other amount to capture.
+- [Improvement] - Support for card type emv_token.
+
+v 1.7.14
+- [Fix] - Polylang support PHP session usage changed to cookie.
+- [Improvement] - Warning message if High Performance Order Storage is disabled or unavailable.
+
+v 1.7.13
+- [Fix] - Corrects payment method names Payconiq and Satispay.
+- [Improvement] - Payment window supports Polylang multi language plugin.
+
+v 1.7.12.1
+- [Improvement] - Support for WooCommerce Gift Cards.
+- [Improvement] - Tool to migrate payment method tokens.
+
+v 1.7.12
+- [Fix] - Redundant call to reduce stock removed.
+- [Improvement] - Add Billwerk order status in order grid.
+
+v 1.7.11
+- [Fix] - VAT added as compound rate got computed twice.
+- [Fix] - Shows no Payment logos when none are selected in settings.
+- [Improvement] - Payment method logo height defaults to 20px.
+- [Improvement] - Support WordPress version 6.7
+
+v 1.7.10
+- [Fix] - Discount coupons for regular products couldn't be used if a Billwerk subscription product was also in the cart.
+- [Fix] - The order confirmation page now shows a list of split orders (for regular and subscription products) with correct total amounts.
+- [Improvement] - Remove Resurs Bank payment method.
+
+v 1.7.9.3
+- [Fix] - Vipps Recurring could not save card.
+
+v 1.7.9.2
+- [Fix] - Webhook URL for plain permalink structure.
+- [Fix] - Removed debug log notice message on cart page.
+- [Fix] - Since v1.7.9.1, setting "skip order lines" caused the authorized amount to be multiplied by 100 one more time. Only when using a saved card to pay for a non-subscription product.
+
+v 1.7.9.1
+- [Fix] - The payment method 'Vipps MobilePay Recurring' did not save the token.
+
+v 1.7.9
+- [Improvement] - New payment method added: "Vipps MobilePay".
+- [Improvement] - Warning messages added for "Mobilepay" to encourage switch to "Vipps Mobilepay".
+- [Improvement] - Name change payment method "Vipps Recurring" to "Vipps MobilePay Recurring".
+- [Improvement] - Warning message added for "MobilePay Subscription" to encourage switch to using "Vipps MobilePay - Recurring" instead.
+
+v 1.7.8.1 - 
+* [Fix] - Fixed total calculation missing multiplication with number of items when using setting "Skip order lines".
+
+v 1.7.8 -
+* [Fix] - Bug WP warning message "The use statement with non-compound name WC_Reepay_Renewals has no effect." (hotfix 1.7.7.1).
+* [Fix] - Bug double amount calculated when using setting "skip order lines" (hotfix 1.7.7.2).
+* [Fix] - Bug fix WC discount codes on mixed orders.
+* [Improvement] - Extra checkbox in WC standard checkout for subscription conditions.
+
+v 1.7.7.2 -
+* [Fix] - Setting skip order lines make calculate amount double.
+
+v 1.7.7.1 -
+* [Fix] - WP warning message The use statement with non-compound name WC_Reepay_Renewals has no effect.
+
+v 1.7.7 -
+* [Fix] - Missing payment_method_reference data in the Billwerk+ customer_payment_method_added webhook could cause PHP fatal error.
+* [Fix] - WooCommerce Subscriptions had issues with change of payment method where orders got payment authorized but were not automatically captured and set to complete.
+* [Fix] - Instant capture didn't work for orders with discount.
+* [Fix] - Amounts in order notes were wrong for "Failed to settle" notes and some captures.
+* [Improvement] - A WordPress notice appears when the module starts to use another API key. This is because the subscriptions are defined in the Billwerk+ account, and the notice is only showed if the subscription module "Optimize" is installed.
+* [Compatibility] - Billwerk+ Optimize version 1.2.7
+
+v 1.7.6 -
+* [Fix] - Allow the activation of Santander and enforce a redirect for this payment.
+* [Compatibility] - Billwerk+ Optimize version 1.2.6
+
+v 1.7.5 - 
+* [Improvement] - Product name change to "Billwerk+ Pay".
+* [Fix] - Including card fee in the order line prevented the order from being auto-captured.
+* [Fix] - WooCommerce subscription renewal orders were not auto-captured and their status remained incomplete.
+
+v 1.7.4 - 
+* Added link to install or activate WP Rollback plugin.
+
+v 1.7.3 - Logo fixes, WP last support, Order text clear
+v 1.7.2 - Fixes, refactor, tests
+v 1.7.1 - New methods add, WPML detect language support, change order calculation
+v 1.7.0 - Emoji in title clear, Payment method delete fixes, Fatal and warnings fixes
+v 1.6.4 - Fix settle string fatal error
+v 1.6.3 - Woocommerce zero payment fixes
+v 1.6.2 - Fix user handle generate
+v 1.6.1 - Card saving fixes, user creation fixes
+v 1.6.0 - Lots of updates and fixes
+v 1.5.0 - Billwerk+ version update and thankyou changes
+v 1.4.73 - Billwerk+ naming changes
+v 1.4.72 - MS tokens saving and HPOS support
+v 1.4.71 - Container fixes, manual add token
+v 1.4.70 - Fatal fixes, cards live loading, fix multisite webhooks
+v 1.4.69 - MS method fixes, add cards logo, fix account settings
+v 1.4.68 - Change order handle generation
+v 1.4.67 - Fix bugs on checkout and thank you pages
+v 1.4.66 - Choose send order lines or not
+v 1.4.65 - Fix instant settle to full amount
+v 1.4.64 - Fix subscription hook
+v 1.4.63 - Global code refactors
+v 1.4.62 - Instant settle full order lines
+v 1.4.61 - Code refactor, Woo blocks fixes fatal
+v 1.4.60 - Fix subscriptions coupons, Add Woo blocks
+v 1.4.59 - Fix WC 7.5.0 checkout bug
+v 1.4.58 - Fix multilingual webhook endpoints
+v 1.4.57 - Only recurring button text
+v 1.4.56 - Fix renewals error
+v 1.4.55 - Fix fatal webhooks error
+v 1.4.54 - Fix webhook configure
+v 1.4.53 - Add anyday, fix pending payment
+v 1.4.52 - Card type method call fix
+v 1.4.51 - Fix invoice email settle
+v 1.4.50 - Fix capture exception
+v 1.4.49 - Keys info feature
+v 1.4.48 - Subscriptions widget
+v 1.4.47 - Enable sync default
+v 1.4.46 - Fix status gateway
+v 1.4.45 - Add settings separator
+v 1.4.44 - Capture extra checking
+v 1.4.43 - Sync statuses disable
+v 1.4.42 - Fix order duplication
+v 1.4.41 - Surcharge sync
+v 1.4.40 - Manually invoices sync
+v 1.4.39 - Subscriptions checkout fix
+v 1.4.38 - Subscriptions checkout fix, visual admin features
+v 1.4.37 - Card on file when using existing cards
+v 1.4.36 - Fix checkout subscriptions
+v 1.4.35 - Checkout fix
+v 1.4.34 - New card subscriptions fix
+v 1.4.33 - Settle items in one request, fix complete order settle
+v 1.4.32 - Complete order settle fix
+v 1.4.31 - WC subscription fixing
+v 1.4.30 - Fix capture
+v 1.4.29 - Mobile conditions subscriptions, allow any webhooks, subscriptions recurring
+v 1.4.28 - Settle fee on complete
+v 1.4.27 - Update customer after reorder
+v 1.4.26 - Fix reorder after cancel
+v 1.4.25 - Fix duplicated handle, remove settle button for already settled items
+v 1.4.24 - Bugfix
+v 1.4.23 - Bugfix for webhooks
+v 1.4.22 - Settle price and all lines settle dynamically
+v 1.4.21 - Fix shipping settle
+v 1.4.20 - Change status message, add card token in order custom fields, fix display price refund
+v 1.4.19 - Bugfixing
+v 1.4.18 - improvements;
+v 1.4.15 - improvements, bugfixes;
+v 1.4.14 - added order_lines for capturing process;
+v 1.4.13 - Bugfixes; improvements
+v 1.4.12 - Notice fix, remove not used class, change curl to wp_remote_request
+v 1.4.11 - Bugfix, improvements
+v 1.4.10 - Bugfix
+v 1.4.9 - Bugfix
+v 1.4.8 - Fixes for partial settle. Added improvement for invoice handles that has already been authorized/settled
+v 1.4.7 - Bugfix
+v 1.4.6 - Fix for subscrition reneval process
+v 1.4.5 - Added Klarna Slice It
+v 1.4.4 - Bugfix
+v 1.4.3 - Bugfixes
+v 1.4.2 - Improvements; Bugfixes
+v 1.4.1 - Bugfix
+v 1.4.0 - Added Mobilepay Subscriptions
+v 1.3.4 - Added Google Pay and Vipps; bugfixes
+v 1.3.3 - Added support for Icelandic krona
+v 1.3.2 - Compatibility with php 8.0; avoid using sessions for customers handling; added admin notifications
+v 1.3.1 - Webhook configuration updates
+v 1.3.0 - Make Apply Pay be available for Safari only
+v 1.2.9 - Webhoop script + Apple Pay fix
+v 1.2.8 - Bugfix for double email send
+v 1.2.7 - Implemented background webhook processing
+v 1.2.6 - Bugfix - two emails.
+v 1.2.5 - Smaller bugfixes, Please see this video for further instructions on how to set up payment methods in WooCommerce with the new enhancements. https://youtu.be/dk083Yj4Lpg
+v 1.2.4 - Small visual improvements
+v 1.2.2 - Small visual improvements
+v 1.2.1 - Smaller bugfixes
+v 1.2.0 - Lot of chanegs including direct actions on an order in woorcommerce.
+v 1.1.27 - Added advanced instant-settle + payment-widget in back-office
+v 1.1.17 - Small minor bugfixes
+v 1.1.16 - Set \"Save CC\" enabled by default
+v 1.1.15 - Fixed: Unprocessable Entity error
+v 1.1.14 - Bugfixes and Improvements
+v 1.1.13 - Bugfixes
+v 1.1.12 - Save card for later + minor updates
+v 1.1.11 - Fixed problem with incorrect order handlers of renewal orders
+v 1.1.10 - Fixed php notice add_footer is called statically and bugfix
+v 1.1.9 - Bugfix - Require upgrade if wcs modules installed
+v 1.1.8 - Bugfixes + improved logging
+v 1.1.7 - Woo Subscriptions improvements
+v 1.1.6 - Fixed subscription renewal
+v 1.1.5 - Capture payment when order status change
+v 1.1.4 - Fixed completed order status that receive via Webhook
+v 1.1.3 - Bugfix
+v 1.1.2 - Bugfix
+v 1.1.1 - Bugfix
+v 1.1.0 - Bugfix
+v 1.0.0

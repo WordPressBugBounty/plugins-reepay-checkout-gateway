@@ -1,0 +1,17 @@
+.migration-mobilepay-to-vippsmobile-wrap {
+  padding-top: 20px;
+}
+.migration-mobilepay-to-vippsmobile-wrap .form {
+  margin-bottom: 20px;
+}
+.migration-mobilepay-to-vippsmobile-wrap .spinners_warp {
+  display: none;
+}
+.migration-mobilepay-to-vippsmobile-wrap .spinners {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.migration-mobilepay-to-vippsmobile-wrap .spinners .lable {
+  margin-left: 10px;
+}

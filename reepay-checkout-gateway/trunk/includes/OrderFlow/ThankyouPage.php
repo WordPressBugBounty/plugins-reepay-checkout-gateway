@@ -1,0 +1,473 @@
+<?php
+/**
+ * Status processing in reepay after payment on the thankyou page
+ *
+ * @package Reepay\Checkout\OrderFlow
+ */
+
+namespace Reepay\Checkout\OrderFlow;
+
+use Exception;
+use Reepay\Checkout\Utils\LoggingTrait;
+use WC_Order;
+use WC_Order_Item_Product;
+use WC_Reepay_Renewals as WCRR;
+
+defined( 'ABSPATH' ) || exit();
+
+/**
+ * Class ThankyouPage
+ *
+ * @package Reepay\Checkout\OrderFlow
+ */
+class ThankyouPage {
+	use LoggingTrait;
+
+	/**
+	 * Logging source
+	 *
+	 * @var string
+	 */
+	private string $logging_source = 'reepay-thankyou';
+
+	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		add_filter( 'wc_get_template', array( $this, 'override_thankyou_template' ), 5, 20 );
+
+		add_action( 'wp_enqueue_scripts', array( $this, 'thankyou_scripts' ) );
+
+		add_action( 'wp_ajax_reepay_check_payment', array( $this, 'ajax_check_payment' ) );
+		add_action( 'wp_ajax_nopriv_reepay_check_payment', array( $this, 'ajax_check_payment' ) );
+
+		add_action( 'wp_ajax_reepay_order_descriptions', array( $this, 'ajax_order_descriptions' ) );
+		add_action( 'wp_ajax_nopriv_reepay_order_descriptions', array( $this, 'ajax_order_descriptions' ) );
+	}
+
+	/**
+	 * Override "checkout/thankyou.php" template.
+	 *
+	 * Some plugins send variables with the wrong types to this filter, so the types have been removed to avoid errors.
+	 *
+	 * @param string $located       path for inclusion.
+	 * @param string $template_name Template name.
+	 * @param array  $args          Arguments.
+	 * @param string $template_path Template path.
+	 * @param string $default_path  Default path.
+	 *
+	 * @return string
+	 */
+	public function override_thankyou_template( $located, $template_name, $args, $template_path, $default_path ): string {
+		if ( is_array( $args ) &&
+			is_string( $template_path ) &&
+			strpos( $located, 'checkout/thankyou.php' ) !== false &&
+			! empty( $args['order'] ) &&
+			rp_is_order_paid_via_reepay( $args['order'] )
+		) {
+			$located = wc_locate_template(
+				'checkout/thankyou.php',
+				$template_path,
+				reepay()->get_setting( 'templates_path' )
+			);
+		}
+
+		return $located;
+	}
+
+	/**
+	 * Outputs scripts used for "thankyou" page
+	 *
+	 * @return void
+	 */
+	public function thankyou_scripts() {
+		$order_key = isset( $_GET['key'] ) ? wc_clean( wp_unslash( $_GET['key'] ) ) : '';
+		$order     = wc_get_order( get_query_var( 'order-received', 0 ) );
+
+		if ( empty( $order )
+			|| ! $order->key_is_valid( $order_key )
+			|| ! rp_is_order_paid_via_reepay( $order )
+		) {
+			return;
+		}
+
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		wp_enqueue_script(
+			'wc-gateway-reepay-thankyou',
+			reepay()->get_setting( 'js_url' ) . 'thankyou' . $suffix . '.js',
+			array(
+				'jquery',
+				'jquery-blockui',
+			),
+			reepay()->get_setting( 'plugin_version' ),
+			true
+		);
+
+		$order_rp_subscription = false;
+		if ( class_exists( WCRR::class ) && WCRR::is_order_contain_subscription( $order ) ) {
+			$order_rp_subscription = true;
+		}
+
+		$order_is_rp_subscription = false;
+		$reepay_is_subscription   = $order->get_meta( '_reepay_is_subscription' );
+		if ( ! empty( $reepay_is_subscription ) ) {
+			$order_is_rp_subscription = true;
+		}
+
+		wp_localize_script(
+			'wc-gateway-reepay-thankyou',
+			'WC_Reepay_Thankyou',
+			array(
+				'order_id'                      => $order->get_id(),
+				'order_key'                     => $order_key,
+				'order_contain_rp_subscription' => $order_rp_subscription,
+				'order_is_rp_subscription'      => $order_is_rp_subscription,
+				'nonce'                         => wp_create_nonce( 'reepay' ),
+				'ajax_url'                      => admin_url( 'admin-ajax.php' ),
+				'check_message'                 => __(
+					'Please wait. We\'re checking the payment status.',
+					'reepay-checkout-gateway'
+				),
+			)
+		);
+	}
+
+	/**
+	 * Ajax: Check the payment
+	 */
+	public function ajax_check_payment() {
+		check_ajax_referer( 'reepay', 'nonce' );
+
+		$order_id  = isset( $_POST['order_id'] ) ? wc_clean( $_POST['order_id'] ) : '';
+		$order_key = isset( $_POST['order_key'] ) ? wc_clean( $_POST['order_key'] ) : '';
+
+		if ( empty( $order_id ) || empty( $order_key ) ) {
+			wp_send_json_error( 'Invalid order' );
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( empty( $order ) || ! $order->key_is_valid( $order_key ) ) {
+			wp_send_json_error( 'Invalid order' );
+		}
+
+		foreach ( $order->get_items() as $item ) {
+			/**
+			 * WC_Order_Item_Product returns not WC_Order_Item
+			 *
+			 * @var WC_Order_Item_Product $item
+			 */
+			$_product = $item->get_product();
+			if ( intval( $order->get_total() ) <= 0 && $_product instanceof WC_Product && wcs_is_subscription_product( $_product ) ) {
+				$ret = array(
+					'state'   => 'paid',
+					'message' => 'Subscription is activated in trial',
+				);
+
+				wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret, $order->get_id() ) );
+			}
+		}
+
+		$invoice_data = reepay()->api( $order )->get_invoice_data( $order );
+
+		if ( is_wp_error( $invoice_data ) ) {
+			wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', array( 'state' => 'unknown' ), $order->get_id() ) );
+		}
+
+		switch ( $invoice_data['state'] ) {
+			case 'pending':
+				$ret = array(
+					'state' => 'pending',
+				);
+				break;
+			case 'authorized':
+			case 'settled':
+				$ret = array(
+					'state'   => 'paid',
+					'message' => 'Order has been paid',
+				);
+
+				break;
+			case 'cancelled':
+				$ret = array(
+					'state'   => 'failed',
+					'message' => 'Order has been cancelled',
+				);
+
+				break;
+			case 'failed':
+				$message = 'Order has been failed';
+
+				if ( count( $invoice_data['transactions'] ) > 0 &&
+					isset( $invoice_data['transactions'][0]['card_transaction']['acquirer_message'] )
+				) {
+					$message = $invoice_data['transactions'][0]['card_transaction']['acquirer_message'];
+				}
+
+				$ret = array(
+					'state'   => 'failed',
+					'message' => $message,
+				);
+
+				break;
+		}
+
+		wp_send_json_success( apply_filters( 'woocommerce_reepay_check_payment', $ret ?? array(), $order->get_id() ) );
+	}
+
+	/**
+	 * Ajax: get order description on mix order.
+	 */
+	public function ajax_order_descriptions() {
+		check_ajax_referer( 'reepay', 'nonce' );
+
+		$order_id  = isset( $_POST['order_id'] ) ? wc_clean( $_POST['order_id'] ) : '';
+		$order_key = isset( $_POST['order_key'] ) ? wc_clean( $_POST['order_key'] ) : '';
+
+		if ( empty( $order_id ) || empty( $order_key ) ) {
+			wp_send_json_error( 'Invalid order' );
+		}
+
+		$order = wc_get_order( $order_id );
+		if ( empty( $order ) || ! $order->key_is_valid( $order_key ) ) {
+			wp_send_json_error( 'Invalid order' );
+		}
+
+		$another_orders = $order->get_meta( '_reepay_another_orders' ) ?: array();
+
+		if ( is_array( $another_orders ) ) {
+			ob_start();
+
+			reepay()->get_template(
+				'checkout/order-details.php',
+				array(
+					'order' => $order,
+				)
+			);
+
+			if ( ! empty( $another_orders ) ) {
+				foreach ( $another_orders as $order_id ) {
+					if ( $order->get_id() === $order_id ) {
+						continue;
+					}
+
+					reepay()->get_template(
+						'checkout/order-details.php',
+						array(
+							'order' => wc_get_order( $order_id ),
+						)
+					);
+				}
+			}
+			$order_details = ob_get_clean();
+			wp_send_json_success( $order_details );
+			wp_die();
+		} else {
+			wp_send_json_error( 'Order data not ready yet' );
+		}
+	}
+
+	/**
+	 * Get pro-rated reepay subscription data.
+	 *
+	 * @param WC_Order $order Order object.
+	 *
+	 * @return array|null Pro-rated data or null if not applicable.
+	 */
+	public static function get_pro_rated_reepay_subscription( $order ) {
+
+		if ( ! $order || ! rp_is_order_paid_via_reepay( $order ) ) {
+			return null;
+		}
+
+		$another_orders = $order->get_meta( '_reepay_another_orders' ) ?: array();
+
+		if ( ! class_exists( WCRR::class ) ) {
+			return null;
+		}
+
+		if ( ! WCRR::is_order_contain_subscription( $order ) && empty( $another_orders ) ) {
+			return null;
+		}
+
+		// Retrieve the subscription handle from the order metadata.
+		$_reepay_subscription_handle = $order->get_meta( '_reepay_subscription_handle', true );
+
+		// Check if the subscription handle exists.
+		if ( ! empty( $_reepay_subscription_handle ) ) {
+			// Fetch subscription details from the Reepay API using the subscription handle.
+			$subscription_handle = reepay_s()->api()->request( "subscription/$_reepay_subscription_handle" );
+
+			// Check if the subscription details contain a plan.
+			if ( isset( $subscription_handle['plan'] ) ) {
+				$subscription_plan = $subscription_handle['plan'];
+
+				// Fetch the plan details from the Reepay API using the plan identifier.
+				$plan_data = reepay_s()->api()->request( "plan/$subscription_plan/current" );
+
+				// Check if the plan includes a trial period.
+				if ( isset( $plan_data['trial_interval_length'] ) ) {
+					return null;
+				} elseif ( isset( $plan_data['schedule_type'] ) && 'manual' === $plan_data['schedule_type'] ) { // Check if the plan's schedule type is set to 'manual' (manual on-demand).
+					return null; // Exit if the schedule type is manual.
+				}
+			}
+		}
+
+		// Add retry logic.
+		$max_attempts = 10; // Maximum number of attempts to get invoice data.
+		$attempts     = 0;
+		$invoice_data = null;
+
+		while ( $attempts < $max_attempts ) {
+			$_reepay_order = $order->get_meta( '_reepay_order', true );
+			if ( ! empty( $_reepay_order ) ) {
+				$invoice_data = reepay_s()->api()->request( "invoice/$_reepay_order" );
+			}
+
+			if ( ! is_wp_error( $invoice_data ) ) {
+				break;
+			}
+
+			++$attempts;
+			if ( $attempts < $max_attempts ) {
+				sleep( 2 ); // Wait 2 seconds before next attempt.
+			}
+		}
+
+		if ( is_wp_error( $invoice_data ) ||
+		! isset( $invoice_data['plan'] ) ||
+		! isset( $invoice_data['subscription'] ) ) {
+			return null; // Exit if invoice data is invalid or missing.
+		}
+
+		$subscription_plan = $invoice_data['plan'];
+		$handle            = $invoice_data['subscription'];
+
+		if ( empty( $subscription_plan ) || empty( $handle ) ) {
+			return null;
+		}
+
+		$plan_data = reepay_s()->api()->request( "plan/$subscription_plan/current" );
+
+		if ( false !== $plan_data['partial_proration_days'] ) {
+			return null;
+		}
+
+		$pro_rated_data = array();
+
+		$next_invoice_preview = reepay_s()->api()->request( "subscription/$handle/next_invoice_preview" );
+
+		$pro_rated_data['invoice_amount']              = $invoice_data['amount'];
+		$pro_rated_data['next_invoice_preview_amount'] = $next_invoice_preview['amount'];
+
+		return $pro_rated_data;
+	}
+
+	/**
+	 * Check at DB level whether any subscription product in the order uses pro-rated billing.
+	 *
+	 * Reads the partial_period_handling value stored in product meta by the
+	 * reepay-woocommerce-subscriptions plugin. Returns true if any product has
+	 * period = 'bill_prorated' or period = '' (empty = API default of bill_prorated).
+	 *
+	 * Schedule types that store a non-array meta value (e.g. daily, month_startdate)
+	 * or no meta at all (e.g. manual) are skipped automatically — no type denylist needed.
+	 *
+	 * Falls back to true (allow API check) if WC_Reepay_Subscription_Plan_Simple is unavailable.
+	 *
+	 * @param WC_Order $order Order object.
+	 * @return bool
+	 */
+	public static function order_has_prorated_subscription( WC_Order $order ): bool {
+		$debug = function_exists( 'wc_get_logger' ) && 'yes' === reepay()->get_setting( 'debug' );
+
+		if ( ! class_exists( 'WC_Reepay_Subscription_Plan_Simple' ) ) {
+			if ( $debug ) {
+				wc_get_logger()->debug(
+					sprintf( 'order_has_prorated_subscription: WC_Reepay_Subscription_Plan_Simple not found — falling back to API check for order %d', $order->get_id() ),
+					array( 'source' => 'reepay-thankyou' )
+				);
+			}
+			return true;
+		}
+
+		$order_ids      = array( $order->get_id() );
+		$another_orders = $order->get_meta( '_reepay_another_orders' );
+		if ( ! empty( $another_orders ) && is_array( $another_orders ) ) {
+			foreach ( $another_orders as $another_order_id ) {
+				$order_ids[] = $another_order_id;
+			}
+		}
+
+		foreach ( $order_ids as $order_id ) {
+			$scan_order = ( $order_id === $order->get_id() ) ? $order : wc_get_order( $order_id );
+			if ( ! $scan_order instanceof \WC_Order ) {
+				continue;
+			}
+
+			foreach ( $scan_order->get_items() as $item ) {
+				if ( ! $item instanceof WC_Order_Item_Product ) {
+					continue;
+				}
+
+				$product_id    = $item->get_product_id();
+				$schedule_type = get_post_meta( $product_id, '_reepay_subscription_schedule_type', true );
+
+				if ( empty( $schedule_type ) ) {
+					if ( $debug ) {
+						wc_get_logger()->debug(
+							sprintf( 'order_has_prorated_subscription: product %d has no _reepay_subscription_schedule_type — not a Frisbii subscription product, skipping', $product_id ),
+							array( 'source' => 'reepay-thankyou' )
+						);
+					}
+					continue;
+				}
+
+				$type_data = get_post_meta( $product_id, '_reepay_subscription_' . $schedule_type, true );
+
+				// Schedule types without a period field (daily, month_startdate) store a plain
+				// integer; manual stores nothing. Skip all non-array meta values.
+				if ( ! is_array( $type_data ) ) {
+					if ( $debug ) {
+						wc_get_logger()->debug(
+							sprintf( 'order_has_prorated_subscription: product %d schedule_type=%s has no period array (meta value: %s) — not pro-ratable, skipping', $product_id, $schedule_type, wp_json_encode( $type_data ) ),
+							array( 'source' => 'reepay-thankyou' )
+						);
+					}
+					continue;
+				}
+
+				$period = isset( $type_data['period'] ) ? $type_data['period'] : '';
+
+				if ( $debug ) {
+					wc_get_logger()->debug(
+						sprintf( 'order_has_prorated_subscription: product %d schedule_type=%s period=%s', $product_id, $schedule_type, ( '' === $period ? '(empty=bill_prorated default)' : $period ) ),
+						array( 'source' => 'reepay-thankyou' )
+					);
+				}
+
+				// 'bill_prorated' is explicitly pro-rated; '' means the field was not set,
+				// which the Frisbii API treats as bill_prorated by default.
+				if ( 'bill_prorated' === $period || '' === $period ) {
+					if ( $debug ) {
+						wc_get_logger()->debug(
+							sprintf( 'order_has_prorated_subscription: order %d — pro-rated product found (product %d, period=%s) — API check will run', $order->get_id(), $product_id, ( '' === $period ? 'empty/default' : $period ) ),
+							array( 'source' => 'reepay-thankyou' )
+						);
+					}
+					return true;
+				}
+			}
+		}
+
+		if ( $debug ) {
+			wc_get_logger()->debug(
+				sprintf( 'order_has_not_prorated_subscription: order %d — no pro-rated products found — skipping API check', $order->get_id() ),
+				array( 'source' => 'reepay-thankyou' )
+			);
+		}
+
+		return false;
+	}
+}
