@@ -17,8 +17,6 @@
 /* Age Verification Panel Styling */
 #age_verification_product_data {
   padding: 12px;
-  /* Enable Age Verification Checkbox */
-  /* Field descriptions */
 }
 #age_verification_product_data .options_group {
   border-bottom: 1px solid #eee;
@@ -29,12 +27,18 @@
   border-bottom: none;
   margin-bottom: 0;
 }
+#age_verification_product_data {
+  /* Enable Age Verification Checkbox */
+}
 #age_verification_product_data .form-field._reepay_enable_age_verification_field {
   margin-bottom: 16px;
 }
 #age_verification_product_data .form-field._reepay_enable_age_verification_field label {
   font-weight: 600;
   color: #23282d;
+}
+#age_verification_product_data {
+  /* Field descriptions */
 }
 #age_verification_product_data .woocommerce-help-tip {
   margin-left: 5px;
