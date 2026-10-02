@@ -35,6 +35,7 @@ return array(
     'Reepay\\Checkout\\Gateways\\Anyday' => $baseDir . '/includes/Gateways/Anyday.php',
     'Reepay\\Checkout\\Gateways\\ApplePay' => $baseDir . '/includes/Gateways/ApplePay.php',
     'Reepay\\Checkout\\Gateways\\Googlepay' => $baseDir . '/includes/Gateways/Googlepay.php',
+    'Reepay\\Checkout\\Gateways\\Klarna' => $baseDir . '/includes/Gateways/Klarna.php',
     'Reepay\\Checkout\\Gateways\\KlarnaDBT' => $baseDir . '/includes/Gateways/KlarnaDBT.php',
     'Reepay\\Checkout\\Gateways\\KlarnaDD' => $baseDir . '/includes/Gateways/KlarnaDD.php',
     'Reepay\\Checkout\\Gateways\\KlarnaPayLater' => $baseDir . '/includes/Gateways/KlarnaPayLater.php',

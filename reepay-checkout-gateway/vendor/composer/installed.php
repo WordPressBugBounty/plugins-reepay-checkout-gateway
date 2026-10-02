@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'reepay/checkout',
-        'pretty_version' => '1.8.17',
-        'version' => '1.8.17.0',
+        'pretty_version' => '1.8.18',
+        'version' => '1.8.18.0',
         'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -11,8 +11,8 @@
     ),
     'versions' => array(
         'reepay/checkout' => array(
-            'pretty_version' => '1.8.17',
-            'version' => '1.8.17.0',
+            'pretty_version' => '1.8.18',
+            'version' => '1.8.18.0',
             'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',

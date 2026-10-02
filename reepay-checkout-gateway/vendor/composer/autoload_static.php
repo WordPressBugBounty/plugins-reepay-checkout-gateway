@@ -65,6 +65,7 @@ class ComposerStaticInit76f5c9e1ed7e25d6c7d61bcf16447cd9
         'Reepay\\Checkout\\Gateways\\Anyday' => __DIR__ . '/../..' . '/includes/Gateways/Anyday.php',
         'Reepay\\Checkout\\Gateways\\ApplePay' => __DIR__ . '/../..' . '/includes/Gateways/ApplePay.php',
         'Reepay\\Checkout\\Gateways\\Googlepay' => __DIR__ . '/../..' . '/includes/Gateways/Googlepay.php',
+        'Reepay\\Checkout\\Gateways\\Klarna' => __DIR__ . '/../..' . '/includes/Gateways/Klarna.php',
         'Reepay\\Checkout\\Gateways\\KlarnaDBT' => __DIR__ . '/../..' . '/includes/Gateways/KlarnaDBT.php',
         'Reepay\\Checkout\\Gateways\\KlarnaDD' => __DIR__ . '/../..' . '/includes/Gateways/KlarnaDD.php',
         'Reepay\\Checkout\\Gateways\\KlarnaPayLater' => __DIR__ . '/../..' . '/includes/Gateways/KlarnaPayLater.php',
