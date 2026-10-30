@@ -110,6 +110,7 @@ return array(
     'Reepay\\Checkout\\Tests\\Helpers\\Reepay_UnitTestCase' => $baseDir . '/tests/helpers/Reepay_UnitTestCase.php',
     'Reepay\\Checkout\\Tests\\Helpers\\Reepay_UnitTestCase_Trait' => $baseDir . '/tests/helpers/Reepay_UnitTestCase_Trait.php',
     'Reepay\\Checkout\\Tests\\Helpers\\Reepay_UnitTestCase_Trait_Tokens' => $baseDir . '/tests/helpers/Reepay_UnitTestCase_Trait_Tokens.php',
+    'Reepay\\Checkout\\Tests\\Mocks\\Api\\Controller\\MetaFieldsControllerTestGadget' => $baseDir . '/tests/mocks/Api/Controller/MetaFieldsControllerTestGadget.php',
     'Reepay\\Checkout\\Tests\\Mocks\\OrderFlow\\OrderCaptureMock' => $baseDir . '/tests/mocks/OrderFlow/OrderCaptureMock.php',
     'Reepay\\Checkout\\Tests\\Unit\\Functions\\CurrencyTest' => $baseDir . '/tests/unit/Functions/CurrencyTest.php',
     'Reepay\\Checkout\\Tests\\Unit\\Functions\\CustomerTest' => $baseDir . '/tests/unit/Functions/CustomerTest.php',
