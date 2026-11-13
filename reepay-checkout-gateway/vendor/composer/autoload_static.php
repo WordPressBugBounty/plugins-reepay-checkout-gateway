@@ -123,6 +123,7 @@ class ComposerStaticInit76f5c9e1ed7e25d6c7d61bcf16447cd9
         'Reepay\\Checkout\\OrderFlow\\UnsettledOrdersMonitor' => __DIR__ . '/../..' . '/includes/OrderFlow/UnsettledOrdersMonitor.php',
         'Reepay\\Checkout\\OrderFlow\\UnsettledOrdersRealtimeCorrection' => __DIR__ . '/../..' . '/includes/OrderFlow/UnsettledOrdersRealtimeCorrection.php',
         'Reepay\\Checkout\\OrderFlow\\Webhook' => __DIR__ . '/../..' . '/includes/OrderFlow/Webhook.php',
+        'Reepay\\Checkout\\OrderFlow\\WebhookLock' => __DIR__ . '/../..' . '/includes/OrderFlow/WebhookLock.php',
         'Reepay\\Checkout\\Plugin\\LifeCycle' => __DIR__ . '/../..' . '/includes/Plugin/LifeCycle.php',
         'Reepay\\Checkout\\Plugin\\Statistics' => __DIR__ . '/../..' . '/includes/Plugin/Statistics.php',
         'Reepay\\Checkout\\Plugin\\UpdateDB' => __DIR__ . '/../..' . '/includes/Plugin/UpdateDB.php',

@@ -93,6 +93,7 @@ return array(
     'Reepay\\Checkout\\OrderFlow\\UnsettledOrdersMonitor' => $baseDir . '/includes/OrderFlow/UnsettledOrdersMonitor.php',
     'Reepay\\Checkout\\OrderFlow\\UnsettledOrdersRealtimeCorrection' => $baseDir . '/includes/OrderFlow/UnsettledOrdersRealtimeCorrection.php',
     'Reepay\\Checkout\\OrderFlow\\Webhook' => $baseDir . '/includes/OrderFlow/Webhook.php',
+    'Reepay\\Checkout\\OrderFlow\\WebhookLock' => $baseDir . '/includes/OrderFlow/WebhookLock.php',
     'Reepay\\Checkout\\Plugin\\LifeCycle' => $baseDir . '/includes/Plugin/LifeCycle.php',
     'Reepay\\Checkout\\Plugin\\Statistics' => $baseDir . '/includes/Plugin/Statistics.php',
     'Reepay\\Checkout\\Plugin\\UpdateDB' => $baseDir . '/includes/Plugin/UpdateDB.php',
